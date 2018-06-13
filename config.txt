@@ -1,0 +1,3 @@
+fbEmail=<email>
+fbPass=<password>
+geckodriverPath=<path-to-geckodriver>\geckodriver.exe
