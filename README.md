@@ -1,4 +1,4 @@
-# fb_analysis
+# informationSpreeFb
 
 ## Please note this is my first proper Github-Project, so any advice is welcome! (no matter if for the code or the github-repository)
 - If deepth is more than 1 it gets a little buggy, but I´m gonna fix that (1 is default)
