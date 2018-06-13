@@ -8,7 +8,6 @@ from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 import time
 
-
 from optparse import OptionParser
 
 class FacebookProfile:
