@@ -88,10 +88,10 @@ class FacebookCrawler:
         
         self.profilesFriends = []
 
-        self.options = self._loadArgs()
+        self.options = self._loadArgs()     
         self.loadConfig()
 
-        self.driver = webdriver.Firefox(executable_path=self.geckodriverPath,firefox_options = opts)
+        self.driver = webdriver.Firefox(firefox_options = opts)
         self.wait = WebDriverWait(self.driver, 10)        
         self.login(self.fbEmail, self.fbPass)
         
@@ -111,12 +111,17 @@ class FacebookCrawler:
 
     def _loadArgs(self):
         parser = OptionParser()
-        parser.add_option("-c", "--file-config", action="store", dest="configFile", default=None, type=str, help="Configfile with fb login and geckodriver-path")
-        parser.add_option("-f", "--file-profiles", action="store", dest="fileProfiles", default=None, type=str, help="fb-Profiles to compare their friends")
+        # required options
+        parser.add_option("-c", "--config-file", action="store", dest="configFile", default=None, type=str, help="Configfile with fb login and geckodriver-path")
+        parser.add_option("-f", "--profiles-file", action="store", dest="profilesFile", default=None, type=str, help="fb-Profiles to compare their friends")
+        
+        # optional options
+        parser.add_option("-o", "--output-file", action="store", dest="outputFile", default=None, type=str, help="outputfile to print results")
         parser.add_option("-d", "--deepth", action="store", dest="deepth", default=1, type=int, help="deepth to go for loading friends")
-        parser.add_option("-p", "--printOnly", action="store", dest="printFlag", default=False, type=int, help="Flag to just print friends")
+        parser.add_option("--printOnly", action="store", dest="printFlag", default=False, type=int, help="Flag to just print friends")
 
         (options, _) = parser.parse_args()
+  
         return options
     
     
@@ -140,14 +145,20 @@ class FacebookCrawler:
      
     # Gets all profiles to be compared including their names in Facebook    
     def _loadFbProfiles(self):
-        with open(self.options.fileProfiles, 'r') as f:
+        with open(self.options.profilesFile, 'r') as f:
             lines = f.readlines()
             for line in lines:
                 self.driver.get(line)
+                profileCover = self.driver.find_element_by_id("fbProfileCover")
+                elems = profileCover.find_elements_by_xpath("//a[@href]")
+                for elem in elems:
+                    print (elem.get_attribute("href"))
+                profileCover.find_elements_by_xpath('.//a[contains(href, "www.facebook.com/photo.php?fbid=")]/href')
+                
                 self.wait.until(EC.visibility_of_element_located((By.ID, "fb-timeline-cover-name")))
                 self.profilesFriends.append(FacebookProfile(name=self.driver.find_element_by_id('fb-timeline-cover-name').text, fbLink=line.split()[0]))
-        
-    
+
+                
     # Gets all visible friends on the current site    
     def _get_friends_list(self):
         return self.driver.find_elements(By.CSS_SELECTOR,'div[data-testid="friend_list_item"]')
@@ -229,16 +240,18 @@ class FacebookCrawler:
         print("finished loading friends")
         
     def printFriends(self):
-        print("start printing friends")
-        for key_profile in self.profilesFriends:
-            print("--------------------------------------------")
-            print("| Friends of " + key_profile.name + " |")
-            print("--------------------------------------------")
-            for profileFriends in key_profile.friends:
-                print(profileFriends)
-            print(len(key_profile.friends))
-        print("finished printing friends")
-
+        if self.options.outputFile != None:
+            with open(self.options.outputFile, 'w') as oFile:
+                print("start printing friends")
+                for key_profile in self.profilesFriends:
+                    print("--------------------------------------------")
+                    print("| Friends of " + key_profile.name + " |")
+                    print("--------------------------------------------")
+                    for profileFriends in key_profile.friends:
+                        print(profileFriends, file=oFile)
+                    print(len(key_profile.friends))
+                print("finished printing friends")
+            oFile.close()
 
 
     def printIntersections(self):
@@ -294,7 +307,7 @@ class FacebookCrawler:
 if __name__ == '__main__':
     
     crawler = FacebookCrawler()
-    
+
     print("Going to load Friends for:")
     print("---------------------------")
     for profile in crawler.profilesFriends:
@@ -302,8 +315,7 @@ if __name__ == '__main__':
     print()
       
     crawler.loadFriends() 
-    
-   
+       
     if crawler.options.printFlag == True:
         crawler.printFriends() 
     else:
